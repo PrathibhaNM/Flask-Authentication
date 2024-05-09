@@ -12,7 +12,7 @@ app.config['JWT_SECRET_KEY'] = 'jwt-secret-string'
 jwt = JWTManager(app)
 
 # Add your MongoDB URL here
-dbURL = 'mongodb+srv://prathibhanm081306:Prathibha13@cluster0.zobjf3r.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0'
+dbURL=''
 client = MongoClient(dbURL)
 db = client['flask_user_authentication']
 users_collection = db['users']
