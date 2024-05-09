@@ -2,17 +2,21 @@ from flask import Flask, request, session, redirect, url_for, flash, make_respon
 from pymongo import MongoClient
 from flask_jwt_extended import JWTManager, jwt_required, create_access_token, get_jwt_identity
 import requests
+from flask_bcrypt import generate_password_hash,check_password_hash
+from settings import SECRET_KEY, MONGODB_URL, JWT_SECRET_KEY
 
 # Creating the instance of Flask class
 app = Flask(__name__)
 
-app.secret_key = 'mysessionkey'  # Used to encrypt session data
-app.config['JWT_SECRET_KEY'] = 'jwt-secret-string'
+app.secret_key = SECRET_KEY  # Used to encrypt session data
+app.config['JWT_SECRET_KEY'] = JWT_SECRET_KEY
 
 jwt = JWTManager(app)
 
 # Add your MongoDB URL here
-dbURL=''
+# dbURL=''
+
+dbURL = MONGODB_URL
 client = MongoClient(dbURL)
 db = client['flask_user_authentication']
 users_collection = db['users']
@@ -38,8 +42,8 @@ def login():
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
-        user = users_collection.find_one({'username': username, 'password': password})
-        if user:
+        user = users_collection.find_one({'username': username})
+        if user and check_password_hash(user['password'],password):
             access_token = create_access_token(identity=username)
             session['logged_in'] = True
             session['access_token'] = access_token
@@ -109,11 +113,18 @@ def register():
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
+
+        #Hashing the password
+        hashed_password = generate_password_hash(password).decode('utf-8')
+
+        #Checking if username already exists in the database
         user = users_collection.find_one({'username': username})
+
         if user:
             return 'Username already exists. Please choose a different username.'
         else:
-            users_collection.insert_one({'username': username, 'password': password})
+            #Insert the user into the database
+            users_collection.insert_one({'username': username, 'password': hashed_password})
             return '''
             <p>Registration successful.</p>
             <p>You can now <a href="/login">login</a> with your new account.</p>'''
